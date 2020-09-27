@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+    private var serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
             Log.d(Tag, "Service Connected")
             rotationService = IRotation.Stub.asInterface(iBinder as IBinder)
@@ -57,6 +57,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         override fun onServiceDisconnected(componentName: ComponentName) {
             Log.d(Tag, "Service Disconnected")
             rotationService = null
+            orientationRequestMesseneger = null
+            orientationReceiveMessenger = null
             mIsBound = false
         }
     }
@@ -65,7 +67,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 GET_ORIENTATION_FLAG -> {
-                    var message = msg.arg1
+                    var message = msg.data.getString("message")
                     rotationTextView.setText(message)
                 }
             }
@@ -88,7 +90,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
     override fun onDestroy() {
         super.onDestroy()
-        unbindService(serviceConnection)
+        if(serviceConnection != null) {
+            unbindService(serviceConnection)
+            serviceConnection = null!!
+        }
     }
 
     private fun appInstalledOrNot(uri: String): Boolean {
