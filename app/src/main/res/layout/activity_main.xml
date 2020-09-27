@@ -9,8 +9,9 @@
 
     <TextView
         android:id="@+id/rotationTextView"
-        android:layout_width="300dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:text="Portrait!"
         android:textColor="#000"
         android:textSize="24sp"
