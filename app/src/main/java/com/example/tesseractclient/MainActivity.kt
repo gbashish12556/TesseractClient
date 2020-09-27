@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.sdk.IRotation
 
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -21,11 +22,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     var rotationService: IRotation? = null
     private val Tag = "Client Application"
     private val serverAppUri = "com.example.sdk"
-    private var mIsBound = false
-    var orientationRequestMesseneger: Messenger? = null;
-    var orientationReceiveMessenger:Messenger? = null
-    val GET_ORIENTATION_FLAG = 111
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,54 +36,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             val intent = Intent(IRotation::class.java.getName())
             intent.action = "service.rotation"
             intent.setPackage(serverAppUri)
-            // binding to remote service
             bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE)
         }
     }
 
     private var serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-            Log.d(Tag, "Service Connected")
             rotationService = IRotation.Stub.asInterface(iBinder as IBinder)
-            orientationRequestMesseneger = Messenger(iBinder)
-            orientationReceiveMessenger = Messenger(ReceiverRandomNoHandler())
-            mIsBound = true
+            rotationService?.intiateSensor()
         }
 
         override fun onServiceDisconnected(componentName: ComponentName) {
-            Log.d(Tag, "Service Disconnected")
             rotationService = null
-            orientationRequestMesseneger = null
-            orientationReceiveMessenger = null
-            mIsBound = false
         }
     }
 
-    inner class ReceiverRandomNoHandler : Handler() {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                GET_ORIENTATION_FLAG -> {
-                    var message = msg.data.getString("message")
-                    rotationTextView.setText(message)
-                }
-            }
-            super.handleMessage(msg)
-        }
-    }
-
-    fun getOrientation(){
-        if (mIsBound === true) {
-            val requestMessage: Message = Message.obtain(null, GET_ORIENTATION_FLAG)
-            requestMessage.replyTo = orientationReceiveMessenger
-            try {
-                orientationRequestMesseneger!!.send(requestMessage)
-            } catch (e: RemoteException) {
-                e.printStackTrace()
-            }
-        } else {
-            Toast.makeText(this, "Service Unbound, can't get random no", Toast.LENGTH_SHORT).show()
-        }
-    }
     override fun onDestroy() {
         super.onDestroy()
         if(serviceConnection != null) {
@@ -119,7 +82,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (appInstalledOrNot(serverAppUri)) {
             when(view?.id) {
                 R.id.getRotation->{
-                    getOrientation()
+                    rotationTextView.text = rotationService?.rotation
                 }
             }
         }
